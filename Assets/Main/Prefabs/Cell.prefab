@@ -149,3 +149,4 @@ MonoBehaviour:
   _rectTransform: {fileID: 3954697082187890014}
   _button: {fileID: 3954697082187889985}
   _defaultColor: {r: 0.015686275, g: 0.62352943, b: 0.015686275, a: 1}
+  _activateColor: {r: 0.02158489, g: 0.85800004, b: 0.02158489, a: 1}

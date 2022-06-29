@@ -5,9 +5,9 @@ using UnityEngine.UI;
 
 public class Cell : MonoBehaviour
 {
-    public struct ID
+    public struct Index
     {
-        public ID(int x, int y)
+        public Index(int x, int y)
         {
             this.x = x;
             this.y = y;
@@ -28,18 +28,20 @@ public class Cell : MonoBehaviour
     private Button _button = null;
     [SerializeField]
     private Color _defaultColor = Color.green;
-    public ID _id;
+    [SerializeField]
+    private Color _activateColor = Color.red;
+    public Index _index;
     private Stone _stone = Stone.None;
     private GameObject _blackStone = null;
     private GameObject _whiteStone = null;
 
     public RectTransform rectTransform { get => _rectTransform; }
-    public ID id { get => _id; set => _id = value; }
+    public Index index { get => _index; set => _index = value; }
     public Stone stone { get => _stone; set => _stone = value; }
     #endregion
 
 
-    private void Start()
+    private void Awake()
     {
         // 色設定
         var colors = _button.colors;
@@ -67,7 +69,7 @@ public class Cell : MonoBehaviour
     /// 石を置く
     /// </summary>
     /// <param name="turn">現在のターン</param>
-    private void PlaceStone(GameBoard.Turn turn)
+    public void PlaceStone(GameBoard.Turn turn)
     {
         switch (turn)
         {
@@ -105,5 +107,55 @@ public class Cell : MonoBehaviour
                 stone = Stone.Black;
                 break;
         }
+    }
+
+    /// <summary>
+    /// 石を置けるかどうか
+    /// </summary>
+    /// <returns></returns>
+    public bool IsDeployable(GameBoard.Turn turn)
+    {
+        // 何かしら石が置かれてると配置不可
+        if (stone != Stone.None)
+            return false;
+
+        Stone color = Stone.None;
+        switch (turn)
+        {
+            case GameBoard.Turn.Black:
+                color = Stone.Black;
+                break;
+            case GameBoard.Turn.White:
+                color = Stone.White;
+                break;
+        }
+        var cells = GameBoard.Instance.GetEndCell(this, color);
+        for (int i = 0; i < (int)GameBoard.Direction.MAX; ++i)
+        {
+            // 一方向でも裏返すことができれば配置可能
+            if (cells[i] != null)
+                return true;
+        }
+
+        return false;
+    }
+
+
+    public void Activate()
+    {
+        var colors = _button.colors;
+        colors.normalColor = _activateColor;
+        colors.disabledColor = _activateColor;
+        _button.colors = colors;
+        _button.interactable = true;
+    }
+
+    public void InActivate()
+    {
+        var colors = _button.colors;
+        colors.normalColor = _defaultColor;
+        colors.disabledColor = _defaultColor;
+        _button.colors = colors;
+        _button.interactable = false;
     }
 }
