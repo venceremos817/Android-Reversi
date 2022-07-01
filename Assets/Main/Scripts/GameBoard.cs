@@ -24,8 +24,8 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
     private Stone _stoneProt = null;
     [SerializeField, Min(4)]
     private int _grid = 8;
-    [SerializeField]
-    private TextMeshProUGUI text;
+    //[SerializeField]
+    //private TextMeshProUGUI text;
 
     private Cell[,] _cells = null;
     private Turn _turn = Turn.Black;
@@ -130,21 +130,21 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
     public void SwitchTurn()
     {
         _turn = (Turn)(((int)_turn + 1) % (int)Turn.MAX);
-        switch (_turn)
-        {
-            case Turn.Black:
-                text.text = "Black Turn";
-                text.color = Color.black;
-                break;
-            case Turn.White:
-                text.text = "White Turn";
-                text.color = Color.white;
-                break;
-            case Turn.MAX:
-                text.text = "Error";
-                text.color = Color.red;
-                break;
-        }
+        //switch (_turn)
+        //{
+        //    case Turn.Black:
+        //        text.text = "Black Turn";
+        //        text.color = Color.black;
+        //        break;
+        //    case Turn.White:
+        //        text.text = "White Turn";
+        //        text.color = Color.white;
+        //        break;
+        //    case Turn.MAX:
+        //        text.text = "Error";
+        //        text.color = Color.red;
+        //        break;
+        //}
 
         foreach (var cell in _cells)
         {

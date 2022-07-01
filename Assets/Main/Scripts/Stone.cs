@@ -57,7 +57,16 @@ public class Stone : MonoBehaviour
     public void Reverse()
     {
         _color = (StoneColor)(((int)_color + 1) % (int)StoneColor.MAX);
+        //_anim.Play("Rotation", 0, 0.0f);
+        _anim.SetBool("bRotation", true);
+    }
 
+    /// <summary>
+    /// 見た目の色の適用
+    /// ※ アニメーションから呼び出す
+    /// </summary>
+    public void AdoptionColor()
+    {
         // 色切り替え
         switch (_color)
         {
@@ -71,6 +80,5 @@ public class Stone : MonoBehaviour
                 _image.color = Color.red;
                 break;
         }
-        _anim.Play("Rotation", 0, 0.0f);
     }
 }
