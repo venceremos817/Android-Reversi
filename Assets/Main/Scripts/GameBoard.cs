@@ -14,29 +14,25 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         MAX
     };
 
-    public TextMeshProUGUI text;
 
+    #region Field
     [SerializeField]
-    private RectTransform rectTransform = null;
+    private RectTransform _rectTransform = null;
     [SerializeField]
     private Cell _cellProt = null;
     [SerializeField]
-    private GameObject _blackStone = null;
-    [SerializeField]
-    private GameObject _whiteStone = null;
+    private Stone _stoneProt = null;
     [SerializeField, Min(4)]
     private int _grid = 8;
+    [SerializeField]
+    private TextMeshProUGUI text;
 
     private Cell[,] _cells = null;
     private Turn _turn = Turn.Black;
 
-    public GameObject blackStone
+    public Stone Stone
     {
-        get { return _blackStone; }
-    }
-    public GameObject whiteStone
-    {
-        get { return _whiteStone; }
+        get { return _stoneProt; }
     }
     private int gird
     {
@@ -50,6 +46,7 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
     {
         get { return _turn; }
     }
+    #endregion
 
     private void Start()
     {
@@ -67,10 +64,10 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
     /// <param name="aspectData"></param>
     private void FitGameBoard(CameraStableAspectData aspectData)
     {
-        float width = Mathf.Max(rectTransform.sizeDelta.x, rectTransform.sizeDelta.y);
+        float width = Mathf.Max(_rectTransform.sizeDelta.x, _rectTransform.sizeDelta.y);
         float boardSize = Mathf.Min(aspectData.targetResolution.width, aspectData.targetResolution.height);
         boardSize /= width;
-        rectTransform.localScale = new Vector3(boardSize, boardSize, 1.0f);
+        _rectTransform.localScale = new Vector3(boardSize, boardSize, 1.0f);
     }
 
     /// <summary>
@@ -98,13 +95,19 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
             }
         }
 
+        // 初期石を配置
         Cell.Index center;
         center.x = _grid / 2;
         center.y = _grid / 2;
+        Debug.Log("ohira 0");
         _cells[center.x, center.y].PlaceStone(Turn.Black);
+        Debug.Log("ohira 1");
         _cells[center.x - 1, center.y].PlaceStone(Turn.White);
-        _cells[center.x, center.y - 1].PlaceStone(Turn.White);
+        Debug.Log("ohira 2");
         _cells[center.x - 1, center.y - 1].PlaceStone(Turn.Black);
+        Debug.Log("ohira 3");
+        _cells[center.x, center.y - 1].PlaceStone(Turn.White);
+        Debug.Log("ohira 4");
     }
 
     /// <summary>
@@ -164,93 +167,18 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
 
         MAX
     };
-#if false
-    /// <summary>
-    /// 隣接したセルの情報群
-    /// </summary>
-    public class AdjacentCellInfo
-    {
-        public enum Direction
-        {
-            LeftUp,
-            Up,
-            RightUp,
-            Left,
-            Right,
-            LeftDown,
-            Down,
-            RightDown,
-
-            MAX
-        };
-        public Cell[] cells = new Cell[(int)Direction.MAX];
-    }
-
-    /// <summary>
-    /// 隣接したセルの情報を取得
-    /// </summary>
-    /// <param name="self">隣接を調べたいセル</param>
-    /// <returns>隣接したセルの情報</returns>
-    public AdjacentCellInfo GetAdjacentCell(Cell self)
-    {
-        AdjacentCellInfo adjacent = new AdjacentCellInfo();
-        int x, y;
-
-        // 上を調べる
-        y = self.index.y + 1;
-        if (y < _grid)
-        {
-            // 左上
-            x = self.index.x - 1;
-            if (x > 0)
-                adjacent.cells[(int)AdjacentCellInfo.Direction.LeftUp] = _cells[x, y];
-            // 真上
-            x = self.index.x;
-            adjacent.cells[(int)AdjacentCellInfo.Direction.Up] = _cells[x, y];
-            // 右上
-            x = self.index.x + 1;
-            if (x > _grid)
-                adjacent.cells[(int)AdjacentCellInfo.Direction.RightUp] = _cells[x, y];
-        }
-
-        y = self.index.y;
-        // 真左
-        x = self.index.x - 1;
-        if (x > 0)
-            adjacent.cells[(int)AdjacentCellInfo.Direction.Left] = _cells[x, y];
-        // 真右
-        x = self.index.x + 1;
-        if (x < _grid)
-            adjacent.cells[(int)AdjacentCellInfo.Direction.Right] = _cells[x, y];
-
-        // 下を調べる
-        y = self.index.y - 1;
-        if (y > 0)
-        {
-            // 左下
-            x = self.index.x - 1;
-            if (x > 0)
-                adjacent.cells[(int)AdjacentCellInfo.Direction.LeftDown] = _cells[x, y];
-            // 真下
-            x = self.index.x;
-            adjacent.cells[(int)AdjacentCellInfo.Direction.Down] = _cells[x, y];
-            // 右下
-            x = self.index.x + 1;
-            if (x < _grid)
-                adjacent.cells[(int)AdjacentCellInfo.Direction.RightDown] = _cells[x, y];
-        }
-
-        return adjacent;
-    }
-#endif
 
     public void ReverseStones(Cell start)
     {
+        // 石が置かれていなければ終了
+        if (start.stone == null)
+            return;
+
         var startStoneColor = start.stone;
         Cell.Index endID;
         //bool reverce = false;
 
-        var endCells = GetEndCell(start, start.stone);
+        var endCells = GetEndCell(start);
 
         // 左上
         if (endCells[(int)Direction.LeftUp] != null)
@@ -340,286 +268,6 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
                 ++x;
             }
         }
-#if false
-        // 左上探索
-        endID = start.index;
-        endID.x -= 1;
-        endID.y += 1;
-        while (endID.x >= 0 && endID.y < _grid)
-        {
-            var leftUpStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (leftUpStone == Cell.Stone.None)
-            {
-                // 裏返し失敗
-                reverce = false;
-                break;
-            }
-            // 同じ色に到達
-            if (leftUpStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 左上へ
-            --endID.x;
-            ++endID.y;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            int x = start.index.x - 1;
-            for (int y = start.index.y + 1; y < endID.y; ++y)
-            {
-                _cells[x, y].Reverse();
-                --x;
-            }
-        }
-
-        // 上探索
-        endID = start.index;
-        endID.y += 1;
-        reverce = false;
-        while (endID.y < _grid)
-        {
-            var upStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (upStone == Cell.Stone.None)
-            {
-                // 裏返し失敗
-                reverce = false;
-                break;
-            }
-            // 同じ色に到達
-            if (upStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 一つ上へ
-            ++endID.y;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            for (int y = start.index.y + 1; y < endID.y; ++y)
-            {
-                _cells[endID.x, y].Reverse();
-            }
-        }
-
-        // 右上探索
-        endID = start.index;
-        endID.x += 1;
-        endID.y += 1;
-        reverce = false;
-        while (endID.x < _grid && endID.y < _grid)
-        {
-            var rightUpStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (rightUpStone == Cell.Stone.None)
-            {
-                // 裏返し失敗
-                reverce = false;
-                break;
-            }
-            // 同じ色に到達
-            if (rightUpStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 右上へ
-            ++endID.x;
-            ++endID.y;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            int x = start.index.x + 1;
-            for (int y = start.index.y + 1; y < endID.y; ++y)
-            {
-                _cells[x, y].Reverse();
-                ++x;
-            }
-        }
-
-        // 左探索
-        endID = start.index;
-        endID.x -= 1;
-        reverce = false;
-        while (endID.x >= 0)
-        {
-            var leftStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (leftStone == Cell.Stone.None)
-            {
-                reverce = false;
-                break;
-            }
-            //同じ色に到達
-            if (leftStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 左へ
-            --endID.x;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            for (int x = start.index.x - 1; x > endID.x; --x)
-            {
-                _cells[x, endID.y].Reverse();
-            }
-        }
-
-        // 右探索
-        endID = start.index;
-        endID.x += 1;
-        reverce = false;
-        while (endID.x < _grid)
-        {
-            var rightStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (rightStone == Cell.Stone.None)
-            {
-                // 裏返し失敗
-                reverce = false;
-                break;
-            }
-            // 同じ色に到達
-            if (rightStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 右へ
-            ++endID.x;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            for (int x = start.index.x + 1; x < endID.x; ++x)
-            {
-                _cells[x, endID.y].Reverse();
-            }
-        }
-
-
-        // 左下探索
-        endID = start.index;
-        endID.x -= 1;
-        endID.y -= 1;
-        reverce = false;
-        while (endID.x >= 0 && endID.y >= 0)
-        {
-            var leftDownStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (leftDownStone == Cell.Stone.None)
-            {
-                // 裏返し失敗
-                reverce = false;
-                break;
-            }
-            // 同じ色に到達
-            if (leftDownStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 左下へ
-            --endID.x;
-            --endID.y;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            int x = start.index.x - 1;
-            for (int y = start.index.y - 1; y > endID.y; --y)
-            {
-                _cells[x, y].Reverse();
-                --x;
-            }
-        }
-
-        // 下探索
-        endID = start.index;
-        endID.y -= 1;
-        reverce = false;
-        while (endID.y >= 0)
-        {
-            var downStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (downStone == Cell.Stone.None)
-            {
-                // 裏返し失敗
-                reverce = false;
-                break;
-            }
-            // 同じ色に到達
-            if (downStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 一つ下へ
-            --endID.y;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            for (int y = start.index.y - 1; y > endID.y; --y)
-            {
-                _cells[endID.x, y].Reverse();
-            }
-        }
-
-        // 右下探索
-        endID = start.index;
-        endID.x += 1;
-        endID.y -= 1;
-        reverce = false;
-        while (endID.x < _grid && endID.y >= 0)
-        {
-            var rightDownStone = _cells[endID.x, endID.y].stone;
-            // 石がない
-            if (rightDownStone == Cell.Stone.None)
-            {
-                // 裏返し失敗
-                reverce = false;
-                break;
-            }
-            // 同じ色に到達
-            if (rightDownStone == startStoneColor)
-            {
-                // 裏返し成功
-                reverce = true;
-                break;
-            }
-            // 右下へ
-            ++endID.x;
-            --endID.y;
-        }
-        // 裏返し実行
-        if (reverce)
-        {
-            int x = start.index.x + 1;
-            for (int y = start.index.y - 1; y > endID.y; --y)
-            {
-                _cells[x, y].Reverse();
-                ++x;
-            }
-        }
-#endif
     }
 
 
@@ -629,13 +277,29 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
     /// <param name="start"></param>
     /// <param name="color"></param>
     /// <returns></returns>
-    public Cell[] GetEndCell(Cell start, Cell.Stone color)
+    public Cell[] GetEndCell(Cell start)
     {
         Cell[] ret = new Cell[(int)Direction.MAX];
         for (int i = 0; i < (int)Direction.MAX; ++i)
             ret[i] = null;
 
-        var startStoneColor = color;
+        Stone.StoneColor startStoneColor = Stone.StoneColor.Black;
+        if (start.stone != null)
+        {
+            startStoneColor = start.stone.color;
+        }
+        else
+        {
+            switch (turn)
+            {
+                case Turn.Black:
+                    startStoneColor = Stone.StoneColor.Black;
+                    break;
+                case Turn.White:
+                    startStoneColor = Stone.StoneColor.White;
+                    break;
+            }
+        }
         Cell.Index endIndex;
         bool reverce = false;
         int cnt = 0;
@@ -648,15 +312,15 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var leftUpStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (leftUpStone == Cell.Stone.None ||
-                 (leftUpStone == startStoneColor && cnt == 0))
+            if (leftUpStone == null ||
+                 (leftUpStone.color == startStoneColor && cnt == 0))
             {
                 // 裏返し不可
                 reverce = false;
                 break;
             }
             // 同じ色に到達
-            if (leftUpStone == startStoneColor)
+            if (leftUpStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
@@ -685,15 +349,15 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var upStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (upStone == Cell.Stone.None ||
-                 (upStone == startStoneColor && cnt == 0))
+            if (upStone == null ||
+                 (upStone.color == startStoneColor && cnt == 0))
             {
                 // 裏返し不可
                 reverce = false;
                 break;
             }
             // 同じ色に到達
-            if (upStone == startStoneColor)
+            if (upStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
@@ -722,15 +386,15 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var rightUpStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (rightUpStone == Cell.Stone.None ||
-                 (rightUpStone == startStoneColor && cnt == 0))
+            if (rightUpStone == null ||
+                 (rightUpStone.color == startStoneColor && cnt == 0))
             {
                 // 裏返し不可
                 reverce = false;
                 break;
             }
             // 同じ色に到達
-            if (rightUpStone == startStoneColor)
+            if (rightUpStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
@@ -759,14 +423,14 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var leftStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (leftStone == Cell.Stone.None ||
-                (leftStone == startStoneColor && cnt == 0))
+            if (leftStone == null ||
+                (leftStone.color == startStoneColor && cnt == 0))
             {
                 reverce = false;
                 break;
             }
             //同じ色に到達
-            if (leftStone == startStoneColor)
+            if (leftStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
@@ -794,15 +458,15 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var rightStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (rightStone == Cell.Stone.None ||
-                 (rightStone == startStoneColor && cnt == 0))
+            if (rightStone == null ||
+                 (rightStone.color == startStoneColor && cnt == 0))
             {
                 // 裏返し不可
                 reverce = false;
                 break;
             }
             // 同じ色に到達
-            if (rightStone == startStoneColor)
+            if (rightStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
@@ -832,15 +496,15 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var leftDownStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (leftDownStone == Cell.Stone.None ||
-                 (leftDownStone == startStoneColor && cnt == 0))
+            if (leftDownStone == null ||
+                 (leftDownStone.color == startStoneColor && cnt == 0))
             {
                 // 裏返し不可
                 reverce = false;
                 break;
             }
             // 同じ色に到達
-            if (leftDownStone == startStoneColor)
+            if (leftDownStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
@@ -869,15 +533,15 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var downStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (downStone == Cell.Stone.None ||
-                 (downStone == startStoneColor && cnt == 0))
+            if (downStone == null ||
+                 (downStone.color == startStoneColor && cnt == 0))
             {
                 // 裏返し不可
                 reverce = false;
                 break;
             }
             // 同じ色に到達
-            if (downStone == startStoneColor)
+            if (downStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
@@ -906,15 +570,15 @@ public class GameBoard : SingletonMonoBehaviour<GameBoard>
         {
             var rightDownStone = _cells[endIndex.x, endIndex.y].stone;
             // 石がない
-            if (rightDownStone == Cell.Stone.None ||
-                 (rightDownStone == startStoneColor && cnt == 0))
+            if (rightDownStone == null ||
+                 (rightDownStone.color == startStoneColor && cnt == 0))
             {
                 // 裏返し不可
                 reverce = false;
                 break;
             }
             // 同じ色に到達
-            if (rightDownStone == startStoneColor)
+            if (rightDownStone.color == startStoneColor)
             {
                 if (cnt > 0)
                 {
